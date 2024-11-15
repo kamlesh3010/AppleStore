@@ -7,16 +7,18 @@ const AppContext = createContext({
   cart: [],
   addToCart: (product) => {},
   removeFromCart: (productId) => {},
-  refreshData:() =>{},
-  updateStockQuantity: (productId, newQuantity) =>{}
-  
+  refreshData: () => {},
+  updateStockQuantity: (productId, newQuantity) => {},
+  clearCart: () => {}
 });
 
 export const AppProvider = ({ children }) => {
   const [data, setData] = useState([]);
   const [isError, setIsError] = useState("");
-  const [cart, setCart] = useState(JSON.parse(localStorage.getItem('cart')) || []);
-
+  const [cart, setCart] = useState(() => {
+    const savedCart = localStorage.getItem('cart');
+    return savedCart ? JSON.parse(savedCart) : [];
+  });
 
   const addToCart = (product) => {
     const existingProductIndex = cart.findIndex((item) => item.id === product.id);
@@ -27,20 +29,15 @@ export const AppProvider = ({ children }) => {
           : item
       );
       setCart(updatedCart);
-      localStorage.setItem('cart', JSON.stringify(updatedCart));
     } else {
       const updatedCart = [...cart, { ...product, quantity: 1 }];
       setCart(updatedCart);
-      localStorage.setItem('cart', JSON.stringify(updatedCart));
     }
   };
 
   const removeFromCart = (productId) => {
-    console.log("productID",productId)
     const updatedCart = cart.filter((item) => item.id !== productId);
     setCart(updatedCart);
-    localStorage.setItem('cart', JSON.stringify(updatedCart));
-    console.log("CART",cart)
   };
 
   const refreshData = async () => {
@@ -48,14 +45,23 @@ export const AppProvider = ({ children }) => {
       const response = await axios.get("/product");
       setData(response.data);
     } catch (error) {
-      setIsError(error.message);
+      setIsError(`Failed to fetch data: ${error.message}`);
     }
   };
 
-  const clearCart =() =>{
+  const updateStockQuantity = (productId, newQuantity) => {
+    setData((prevData) =>
+      prevData.map((product) =>
+        product.id === productId ? { ...product, stockQuantity: newQuantity } : product
+      )
+    );
+  };
+
+  const clearCart = () => {
     setCart([]);
-  }
-  
+    localStorage.removeItem('cart');
+  };
+
   useEffect(() => {
     refreshData();
   }, []);
@@ -63,9 +69,20 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(cart));
   }, [cart]);
-  
+
   return (
-    <AppContext.Provider value={{ data, isError, cart, addToCart, removeFromCart,refreshData, clearCart  }}>
+    <AppContext.Provider
+      value={{
+        data,
+        isError,
+        cart,
+        addToCart,
+        removeFromCart,
+        refreshData,
+        updateStockQuantity,
+        clearCart
+      }}
+    >
       {children}
     </AppContext.Provider>
   );

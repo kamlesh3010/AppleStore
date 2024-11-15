@@ -5,11 +5,12 @@ import CheckoutPopup from "./CheckoutPopup.jsx";
 import { Button } from 'react-bootstrap';
 
 const Cart = () => {
-  const { cart, removeFromCart , clearCart } = useContext(AppContext);
+  const { cart, removeFromCart, clearCart } = useContext(AppContext);
   const [cartItems, setCartItems] = useState([]);
   const [totalPrice, setTotalPrice] = useState(0);
   const [cartImage, setCartImage] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [isCheckoutSuccessful, setIsCheckoutSuccessful] = useState(false);  // Track checkout success
 
   useEffect(() => {
     const fetchImagesAndUpdateCart = async () => {
@@ -36,7 +37,7 @@ const Cart = () => {
             }
           })
         );
-        console.log("cart",cart)
+        console.log("cart", cart)
         setCartItems(cartItemsWithImages);
       } catch (error) {
         console.error("Error fetching product data:", error);
@@ -59,7 +60,7 @@ const Cart = () => {
   const converUrlToFile = async (blobData, fileName) => {
     const file = new File([blobData], fileName, { type: blobData.type });
     return file;
-  }
+  };
 
   const handleIncreaseQuantity = (itemId) => {
     const newCartItems = cartItems.map((item) => {
@@ -74,7 +75,6 @@ const Cart = () => {
     });
     setCartItems(newCartItems);
   };
-  
 
   const handleDecreaseQuantity = (itemId) => {
     const newCartItems = cartItems.map((item) =>
@@ -93,20 +93,21 @@ const Cart = () => {
 
   const handleCheckout = async () => {
     try {
+      // Loop through the cartItems and update them in the backend
       for (const item of cartItems) {
         const { imageUrl, imageName, imageData, imageType, quantity, ...rest } = item;
         const updatedStockQuantity = item.stockQuantity - item.quantity;
-  
+
         const updatedProductData = { ...rest, stockQuantity: updatedStockQuantity };
-        console.log("updated product data", updatedProductData)
-  
+
         const cartProduct = new FormData();
         cartProduct.append("imageFile", cartImage);
         cartProduct.append(
           "product",
           new Blob([JSON.stringify(updatedProductData)], { type: "application/json" })
         );
-  
+
+        // Update product in backend
         await axios
           .put(`http://localhost:8061/api/product/${item.id}`, cartProduct, {
             headers: {
@@ -114,19 +115,30 @@ const Cart = () => {
             },
           })
           .then((response) => {
-            console.log("Product updated successfully:", (cartProduct));
+            console.log("Product updated successfully:", cartProduct);
           })
           .catch((error) => {
             console.error("Error updating product:", error);
+            throw error;  // If error occurs, we stop the checkout process
           });
       }
-      clearCart();
-      setCartItems([]);
-      setShowModal(false);
+
+      // Mark the checkout as successful
+      setIsCheckoutSuccessful(true);
+      setShowModal(false); // Close the checkout modal
     } catch (error) {
-      console.log("error during checkout", error);
+      console.log("Error during checkout", error);
+      setIsCheckoutSuccessful(false);
     }
   };
+
+  useEffect(() => {
+    if (isCheckoutSuccessful) {
+      // Clear the cart after the checkout process is successful
+      clearCart();
+      setCartItems([]); // Clear the cart state
+    }
+  }, [isCheckoutSuccessful, clearCart]);
 
   return (
     <div className="cart-container">

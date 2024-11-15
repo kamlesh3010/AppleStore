@@ -1,5 +1,7 @@
 import "./App.css";
 import React, { useState } from "react";
+import Register from "./components/Registration.jsx"; // Corrected import statement
+
 import Home from "./components/Home";
 import Navbar from "./components/Navbar";
 import Cart from "./components/Cart";
@@ -11,8 +13,8 @@ import { AppProvider } from "./Context/Context";
 import UpdateProduct from "./components/UpdateProduct";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
-
-
+import Login from "./components/login.jsx"; // Corrected the import name
+import CustomerOrder from "./components/CustomerOrder"; // Import the CustomerOrder component
 
 function App() {
   const [cart, setCart] = useState([]);
@@ -52,9 +54,13 @@ function App() {
           <Route path="/add_product" element={<AddProduct />} />
           <Route path="/product" element={<Product />} />
           <Route path="product/:id" element={<Product />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/checkout-details" element={<CheckoutDetails />} /> {/* New Route */}
+          <Route path="/cart" element={<Cart cartItems={cart} />} /> {/* Pass cart to Cart component */}
+          <Route path="/checkout-details" element={<CheckoutDetails />} />
           <Route path="/product/update/:id" element={<UpdateProduct />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<Login />} /> {/* Login route */}
+          <Route path="/customerOrder" element={<CustomerOrder />} /> {/* Ensure CustomerOrder route exists */}
+
         </Routes>
       </BrowserRouter>
     </AppProvider>
