@@ -1,4 +1,9 @@
 package com.example.demo.repo;
 
-public interface UserRepo {
+import com.example.demo.userLogin.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface UserRepo  extends JpaRepository<User,Long> {
+    User findByEmail(String email);
+
 }
